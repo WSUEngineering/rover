@@ -1,0 +1,6 @@
+[Unit]
+Description=Runs necessary processes to operate rover
+[Service]
+ExecStart=/usr/local/sbin/rover-startup.sh
+[Install]
+WantedBy=multi-user.target
