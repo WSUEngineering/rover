@@ -3,10 +3,10 @@ For arduino that controls rover motors.
 
 # socket-arduino_bridge.cpp
 Relays messages from network to arduino.
-Belongs in:
-/home/rover/rover/networking/socket-arduino_bridge.out
-Compiles with:
-g++ socket-arduino_bridge.cpp -o socket-arduino_bridge.out
+Belongs in the ROS2 rover package
+
+# CMakeLists.txt
+Used in the ROS2 rover package to compile source code.
 
 # rover-startup.sh
 Runs the compiled socket-arduino_bridge.cpp as root.

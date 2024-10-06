@@ -163,11 +163,15 @@ int main(int argc, char *argv[])
 		perror("inet_pton error occured");
 		return 1;
 	}
-    	
+   
     	if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		perror("Error : Connect Failed");
 		return 1;
+	}
+	else
+	{
+		cout << "Connected to " << argv[1] << endl << std::flush;
 	}
 	
 	dup2(sockfd, STDOUT_FILENO);

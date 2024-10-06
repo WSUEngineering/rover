@@ -1,2 +1,2 @@
 # gamepad_interface.cpp
-g++ gamepad_interface.cpp -lSDL2 -ldl
+Takes controller input and converts it to instructions for the rover.
