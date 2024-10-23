@@ -18,9 +18,18 @@
 #include <sys/socket.h>
 #include <errno.h>
 
+#include <chrono>
+#include <memory>
+#include <string>
+
+//ros
+#include "std_msgs/msg/string.hpp"
+#include "rclcpp/rclcpp.hpp"
+
 //joystick smoothing variables
 float const JOYSTICK_DEADZONE = 0.1f;
 float const JOYSTICK_CURVE_COEFFICIENT = 4.0f;
+float const JOYSTICK_OFFSET = 0.33f;
 
 //home orientation for tower camera
 float const CAM_TILT_HOME = 8500;
@@ -38,6 +47,9 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+
+
+using namespace std::chrono_literals;
 
 struct Point {
 	float x;
@@ -108,6 +120,9 @@ float getVelocity(Point v, bool side)
 	else if(vMagnitude < 0.0f)
 		return 0.0f;
 		
+	//Joystick smoothing
+	vMagnitude = map(vMagnitude, 0.0f, 1.0f, JOYSTICK_OFFSET, 1.0f);
+	vMagnitude = joystickSmoothing(vMagnitude);
 		
 	float b = 7.0f*M_PI/4.0f;
 	if(side)
@@ -134,47 +149,12 @@ int main(int argc, char *argv[])
 	//dirty hack to prevent undefined udev symbols in SDL
 	dlopen("/lib/x86_64-linux-gnu/libudev.so", RTLD_NOW|RTLD_GLOBAL);
 	
-	// set stdout to arduino serial console
-	//int descriptor = open("/dev/ttyACM0", O_RDWR);
-	//fflush(NULL);
-	//dup2(descriptor, STDOUT_FILENO);
-	
-	//connect to rover
-	int sockfd = 0;
-    	struct sockaddr_in serv_addr;
-    	
-    	if(argc != 2)
-	{
-		cerr << "\n Usage: " << argv[0] << " <ip of server> \n";
-		return 1;
-	}
-	
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
-		perror("Error : Could not create socket");
-		return 1;
-	} 
-	
-	serv_addr.sin_family = AF_INET;
-    	serv_addr.sin_port = htons(5000);
-    	
-    	if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
-	{
-		perror("inet_pton error occured");
-		return 1;
-	}
-   
-    	if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		perror("Error : Connect Failed");
-		return 1;
-	}
-	else
-	{
-		cout << "Connected to " << argv[1] << endl << std::flush;
-	}
-	
-	dup2(sockfd, STDOUT_FILENO);
+	// initialize ros
+	rclcpp::init(argc, argv);
+	auto node = rclcpp::Node::make_shared("gamepad_interface");
+	auto publisher = node->create_publisher<std_msgs::msg::String>("drive_input", 20);
+	auto publish_count = 0;
+	rclcpp::WallRate loop_rate(20ms);
 
 	//initialize SDL
 	if(SDL_Init(SDL_INIT_VIDEO | 
@@ -240,7 +220,7 @@ int main(int argc, char *argv[])
 			string lastMessage = "";
 			
 			//Event polling loop
-			while(isRunning)
+			while(isRunning && rclcpp::ok())
 			{
 				//iterate through all present events
 				while(SDL_PollEvent(&ev) != 0)
@@ -340,15 +320,30 @@ int main(int argc, char *argv[])
 				string message = "l"+std::to_string(leftTrainVel)+"\nr"+std::to_string(rightTrainVel)+"\n";
 				if(message != lastMessage)
 				{
-					cout << message << std::flush;
 					lastMessage = message;
+				
+					std_msgs::msg::String rosMsg;
+					rosMsg.data = message;
+					RCLCPP_INFO(node->get_logger(), "Publishing: '%s'", rosMsg.data.c_str());
+					try {
+						publisher->publish(rosMsg);
+						rclcpp::spin_some(node);
+					} catch (const rclcpp::exceptions::RCLError & e) {
+						RCLCPP_ERROR(
+							node->get_logger(),
+							"unexpectedly failed with %s",
+							e.what());
+					}
 				}
 				
 				//display sent message
 				cerr << message << "END" << endl;
 					
-				usleep(20000);
+				//usleep(20000);
+				loop_rate.sleep();
 			}
+			
+			rclcpp::shutdown();
 
 			if(controller != NULL)
 				SDL_GameControllerClose(controller);

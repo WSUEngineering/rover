@@ -20,6 +20,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
 # copy in source code
 COPY ./base/CMakeLists.txt ./base/
 COPY ./rover/CMakeLists.txt ./rover/
+COPY ./base/package.xml ./base/
+COPY ./rover/package.xml ./rover/
 COPY ./base/src ./base/src
 COPY ./rover/src ./rover/src
 

@@ -12,9 +12,30 @@
 
 #include <errno.h>
 
-static struct sockaddr_in serv_addr;
+#include <memory>
 
-int main()
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+
+class MinimalSubscriber : public rclcpp::Node
+{
+	public:
+	MinimalSubscriber() : Node("socket_arduino_bridge")
+	{
+		auto topic_callback =
+			[this](std_msgs::msg::String::UniquePtr msg) -> void {
+				// write to arduino
+				std::cout << msg->data.c_str() << std::flush;
+			};
+		subscription_ =
+			this->create_subscription<std_msgs::msg::String>("drive_input", 20, topic_callback);
+	}
+
+	private:
+	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+};
+
+int main(int argc, char * argv[])
 {
 	// set stdout to arduino serial console
 	int descriptor;
@@ -28,36 +49,12 @@ int main()
 	//wait for arduino to restart
 	sleep(3);
 
-	int listenfd = 0, connfd = 0;
-
-	listenfd = socket(AF_INET, SOCK_STREAM, 0);
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(5000);
-
-	bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-
-	listen(listenfd, 1);
-
-	// accept connections from network
-	while(true)
-	{
-		connfd = accept(listenfd, nullptr, nullptr);
-
-		// relay messages to arduino until connection closes.
-		char input;
-		while(read(connfd, &input, 1) > 0)
-		{
-			std::cout << input;
-			if(input == '\n')
-				std::cout << std::flush;
-		}
-
-		//set drive train velocity to zero when connection closes
-		std::cout << "l0\nr0\n" << std::flush;
-
-		close(connfd);
-		sleep(1);
-	}
+	// start ros node
+	rclcpp::init(argc, argv);
+	rclcpp::spin(std::make_shared<MinimalSubscriber>());
+	rclcpp::shutdown();
+	
+	//set drive train velocity to zero on shutdown
+	std::cout << "l0\nr0\n" << std::flush;
+	return 0;
 }

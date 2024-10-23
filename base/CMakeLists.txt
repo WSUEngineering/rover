@@ -7,12 +7,16 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+
 # uncomment the following section in order to fill in
 # further dependencies manually.
 find_package(SDL2 REQUIRED)
 include_directories(base ${SDL2_INCLUDE_DIRS})
 
 add_executable(gamepad_interface src/gamepad_interface.cpp)
+ament_target_dependencies(gamepad_interface rclcpp std_msgs)
 target_include_directories(gamepad_interface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
