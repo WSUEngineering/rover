@@ -18,6 +18,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && ros2 pkg create --build-type ament_cmake base
  
 # copy in source code
+COPY ./base/launch ./base/launch/
+COPY ./rover/launch ./rover/launch/
 COPY ./base/CMakeLists.txt ./base/
 COPY ./rover/CMakeLists.txt ./rover/
 COPY ./base/package.xml ./base/

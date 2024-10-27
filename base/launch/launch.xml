@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="base" exec="gamepad_interface" name="gamepad_interface"/>
+</launch>

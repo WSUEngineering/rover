@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="rover" exec="socket-arduino_bridge" name="socket_arduino_bridge"/>
+</launch>

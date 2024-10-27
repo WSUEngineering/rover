@@ -12,12 +12,12 @@ Build the docker image:
 sudo docker build -f docker/Dockerfile --target origin -t rover:origin .
 ```
 
-Run the image on the rover:
+Run the image for the rover:
 ```
-sudo docker run -it --net=host --ipc=host --privileged rover:origin bash -c "ros2 run rover socket-arduino_bridge"
+sudo docker run -it --net=host --ipc=host --privileged rover:origin bash -c "ros2 launch rover launch.xml"
 ```
 
-Run the image on the base station:
+Run the image for the base station:
 ```
-sudo docker run -it --net=host --ipc=host --privileged rover:origin bash -c "ros2 run base gamepad_interface 10.42.0.1"
+sudo docker run -it --net=host --ipc=host --privileged rover:origin bash -c "ros2 launch base launch.xml"
 ```
