@@ -44,5 +44,5 @@ ENV NO_AT_BRIDGE=1
 WORKDIR /rover_ws
 COPY ./docker/entrypoint.sh /
 RUN chmod +x /entrypoint.sh
-ENTRYPOINT [ "/entrypoint.sh" ]
-
+WORKDIR /
+ENTRYPOINT [ "bash", "entrypoint.sh" ]
